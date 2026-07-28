@@ -63,12 +63,23 @@ function toYmd(year: number, monthIndex: number, day: number): string {
   return `${yyyy}-${mm}-${dd}`
 }
 
+// Date.UTC は年が 0-99 のとき 1900 年代として解釈する（Date.UTC(50, 0, 1) は 1950年）。
+// 意図と違う年が黙って返るのを避けるため、下限を 100 とする。
+const MIN_YEAR = 100
+
 function assertValidYear(targetYear: number): void {
-  // 年に業務上の上限下限を置くのは難しいため、整数であることだけを要求する。
+  // 年に業務上の上限を置くのは難しいため、整数であることと下限だけを要求する。
   // NaN や小数を通すと日付の組み立てが壊れ、例外を投げずに不正な値が下流へ流れる。
   if (!Number.isInteger(targetYear)) {
     throw new RangeError(
       `targetYear は整数である必要があります。受け取った値: ${String(targetYear)}`,
+    )
+  }
+
+  if (targetYear < MIN_YEAR) {
+    throw new RangeError(
+      `targetYear は ${MIN_YEAR} 以上である必要があります。受け取った値: ${String(targetYear)}` +
+        `（0-99 は Date.UTC の仕様で 1900 年代として解釈されるため受け付けません）`,
     )
   }
 }

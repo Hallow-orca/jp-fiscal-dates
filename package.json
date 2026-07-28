@@ -1,6 +1,6 @@
 {
   "name": "jp-fiscal-dates",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Date utilities for Japanese small-business accounting: month ranges, JST today, month arithmetic with end-of-month clamping, national holidays, and payroll periods driven by a closing date.",
   "type": "module",
   "main": "./dist/index.js",

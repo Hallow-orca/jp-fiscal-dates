@@ -91,6 +91,20 @@ describe('getPayrollRange / 入力検証', () => {
     expect(() => getPayrollRange(1.5, 3, 20)).toThrow(RangeError)
   })
 
+  it('0-99 の年を拒否する', () => {
+    // Date.UTC は 0-99 を 1900 年代として解釈する（Date.UTC(50, 0, 1) は 1950年）。
+    // 意図と違う年が黙って返るのを防ぐ。
+    expect(() => getPayrollRange(50, 3, 20)).toThrow(RangeError)
+    expect(() => getPayrollRange(99, 3, 20)).toThrow(RangeError)
+    expect(() => getPayrollRange(0, 3, 20)).toThrow(RangeError)
+    expect(() => getPayrollRange(-1, 3, 20)).toThrow(RangeError)
+  })
+
+  it('100 以上の年は受け入れる', () => {
+    expect(() => getPayrollRange(100, 3, 20)).not.toThrow()
+    expect(getPayrollRange(100, 3, 20).end).toBe('0100-03-20')
+  })
+
   it('有効な境界値は受け入れる', () => {
     expect(() => getPayrollRange(2026, 1, 1)).not.toThrow()
     expect(() => getPayrollRange(2026, 12, 28)).not.toThrow()
@@ -116,6 +130,11 @@ describe('getPayrollRange / 返り値の形式', () => {
 
   it('文字列なので JSON にしても値が変わらない', () => {
     // Date を返していた頃は、ローカル深夜0時を UTC に直す際に日付が前日へずれていた。
+    //
+    // 注意: このテスト単体では TZ 非依存を保証しない。文字列が JSON を通っても
+    // 変わらないのは自明であり、現在の実装では絶対に落ちない。回帰の意図を
+    // 記録するために残しているだけ。実際に TZ 非依存を保証しているのは
+    // CI の timezones ジョブ（UTC / JST / UTC+14 / UTC-11 / DSTあり）のほう。
     const range = getPayrollRange(2026, 2, 20)
     expect(JSON.parse(JSON.stringify(range))).toEqual({
       start: '2026-01-21',
