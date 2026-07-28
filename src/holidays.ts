@@ -5,6 +5,8 @@
 // 算出せず内閣府の公表値を確定値として手書きしている。
 // 収録範囲は japaneseHolidayCoverage を参照。範囲を伸ばすときはここに追記する。
 
+import { isValidYmd } from './ymd.js'
+
 // 'YYYY-MM-DD'（JST固定）。振替休日・国民の休日はコメントで明示。
 const JAPANESE_HOLIDAYS: ReadonlySet<string> = new Set([
   // 2025
@@ -94,7 +96,13 @@ export const japaneseHolidayCoverage = { from: 2025, to: 2028 } as const
 // isJapaneseHoliday は範囲外の日付に対しても false を返すため、戻り値だけでは
 // 「祝日ではない」と「データを持っていない」を区別できない。営業日判定のように
 // 誤りが事故に繋がる用途では、先にこの関数で収録範囲を確認すること。
+//
+// 'YYYY-MM-DD' 形式でない、または実在しない日付は false を返す。
+// 壊れた入力を「収録済み」と答えると、呼び出し側が isJapaneseHoliday の false を
+// 「営業日である」と読んでしまうため。
 export function isHolidayDataAvailable(date: string): boolean {
+  if (!isValidYmd(date)) return false
+
   const year = Number(date.slice(0, 4))
   return year >= japaneseHolidayCoverage.from && year <= japaneseHolidayCoverage.to
 }
