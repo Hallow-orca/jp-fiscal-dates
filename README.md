@@ -65,10 +65,14 @@ isJapaneseHoliday('2026-07-15') // => false
 
 // 締め日を起点にした集計期間
 getPayrollRange(2026, 2, 20)
-// => 2026-01-21 〜 2026-02-20
+// => { start: '2026-01-21', end: '2026-02-20' }
 
 getPayrollRange(2026, 7, 99) // 99 は月末締め
-// => 2026-07-01 〜 2026-07-31
+// => { start: '2026-07-01', end: '2026-07-31' }
+
+// 契約違反の引数は RangeError で落とす
+getPayrollRange(2026, 2, 31)
+// => RangeError: closingDate は 1-28 の整数、または月末締めを表す 99 で…
 ```
 
 ## API
@@ -85,7 +89,9 @@ getPayrollRange(2026, 7, 99) // 99 は月末締め
 | `getPayrollRange(year, month, closingDate)` | 締め日を起点にした集計期間 |
 | `CLOSING_DATE_END_OF_MONTH` | 月末締めを表す `closingDate` の値（`99`） |
 
-日付はすべて `'YYYY-MM-DD'` 形式の文字列で受け渡します。`Date` を経由しないことで、実行環境のタイムゾーンによる1日のずれを避けています。
+日付はすべて `'YYYY-MM-DD'` 形式の文字列で受け渡します。**戻り値も含めて `Date` を返しません。**
+
+`new Date(2026, 1, 21)` はローカルタイムゾーンの深夜0時を作るため、JSONにしたりISO文字列にした瞬間に日付が前日へずれます。文字列で返せばこの問題自体が発生せず、辞書順の比較がそのまま日付の前後比較になります。
 
 ## 設計上の判断
 
@@ -125,6 +131,8 @@ npm run build      # dist/ に型定義つきで出力
 ```
 
 CI では Node.js 20 / 22 の両方で lint → typecheck → test → build を実行しています。
+
+加えて、UTC / Asia/Tokyo / Pacific/Kiritimati（UTC+14）/ Pacific/Midway（UTC−11）/ America/New_York（DSTあり）の5つのタイムゾーンでテストを走らせています。日付を文字列で扱う設計が実際にTZ非依存であることを、CIで継続的に確認するためです。
 
 ## ライセンス
 
