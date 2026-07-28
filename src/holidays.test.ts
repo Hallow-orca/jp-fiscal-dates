@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isJapaneseHoliday, japaneseHolidayCoverage } from './holidays.js'
+import { isHolidayDataAvailable, isJapaneseHoliday, japaneseHolidayCoverage } from './holidays.js'
 
 describe('isJapaneseHoliday', () => {
   it('固定日の祝日を判定する', () => {
@@ -39,5 +39,27 @@ describe('japaneseHolidayCoverage', () => {
   it('収録範囲を公開している', () => {
     expect(japaneseHolidayCoverage.from).toBe(2025)
     expect(japaneseHolidayCoverage.to).toBe(2028)
+  })
+})
+
+describe('isHolidayDataAvailable', () => {
+  it('収録範囲の下限・上限は収録済みと判定する', () => {
+    expect(isHolidayDataAvailable('2025-01-01')).toBe(true)
+    expect(isHolidayDataAvailable('2028-12-31')).toBe(true)
+  })
+
+  it('収録範囲より前の年は未収録と判定する', () => {
+    expect(isHolidayDataAvailable('2024-12-31')).toBe(false)
+  })
+
+  it('収録範囲より後の年は未収録と判定する', () => {
+    expect(isHolidayDataAvailable('2029-01-01')).toBe(false)
+  })
+
+  it('未収録の年の元日は、祝日判定では false になる', () => {
+    // isJapaneseHoliday だけでは「祝日でない」と「データがない」を区別できない。
+    // 事故を避けるには isHolidayDataAvailable を先に見る必要がある。
+    expect(isJapaneseHoliday('2029-01-01')).toBe(false)
+    expect(isHolidayDataAvailable('2029-01-01')).toBe(false)
   })
 })

@@ -80,6 +80,7 @@ getPayrollRange(2026, 7, 99) // 99 は月末締め
 | `addMonths(date, months)` | 月数を加減する。日は対象月の末日にクランプ |
 | `formatMonthLabel(date)` | `'2026年7月'` 形式のラベルにする |
 | `isJapaneseHoliday(date)` | 日本の祝日かどうか |
+| `isHolidayDataAvailable(date)` | その日付が祝日テーブルの収録範囲に入っているか |
 | `japaneseHolidayCoverage` | 祝日テーブルが収録している年の範囲 |
 | `getPayrollRange(year, month, closingDate)` | 締め日を起点にした集計期間 |
 
@@ -89,6 +90,20 @@ getPayrollRange(2026, 7, 99) // 99 は月末締め
 
 **祝日は算出せずテーブルで持つ。**
 春分の日・秋分の日は天文観測に基づいて前年2月に官報で公示されるため、確定値を持つ以外に正確な方法がありません。振替休日・国民の休日も同様に、規則から導くより公示値を写すほうが安全です。収録範囲は `japaneseHolidayCoverage` で公開しています。
+
+**収録範囲外は「祝日ではない」と返る。**
+`isJapaneseHoliday('2029-01-01')` は元日であっても `false` を返します。テーブルに無いためです。この戻り値だけでは「祝日ではない」と「データを持っていない」を区別できません。
+
+引落日の算出のように、判定を誤ると事故になる用途では、先に `isHolidayDataAvailable` で収録範囲を確認してください。
+
+```ts
+if (!isHolidayDataAvailable(date)) {
+  throw new Error(`祝日データが未収録の日付です: ${date}`)
+}
+if (isJapaneseHoliday(date)) {
+  // 銀行は動かない
+}
+```
 
 **月の加減算は末日クランプ。**
 `addMonths('2026-01-31', 1)` は `'2026-02-28'` を返します。この変換は片道で、逆方向に戻しても元には戻りません（`'2026-01-28'` になります）。月ナビゲーションの基準日として使う想定で、この挙動をテストで固定しています。

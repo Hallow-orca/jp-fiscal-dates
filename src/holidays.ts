@@ -89,7 +89,19 @@ const JAPANESE_HOLIDAYS: ReadonlySet<string> = new Set([
 // このテーブルが網羅している年の範囲。
 export const japaneseHolidayCoverage = { from: 2025, to: 2028 } as const
 
+// 与えられた日付が祝日テーブルの収録範囲に入っているか。
+//
+// isJapaneseHoliday は範囲外の日付に対しても false を返すため、戻り値だけでは
+// 「祝日ではない」と「データを持っていない」を区別できない。営業日判定のように
+// 誤りが事故に繋がる用途では、先にこの関数で収録範囲を確認すること。
+export function isHolidayDataAvailable(date: string): boolean {
+  const year = Number(date.slice(0, 4))
+  return year >= japaneseHolidayCoverage.from && year <= japaneseHolidayCoverage.to
+}
+
 // 'YYYY-MM-DD' が日本の祝日（振替休日・国民の休日を含む）かどうか。
+//
+// 収録範囲外の年は常に false を返す。範囲を確認するには isHolidayDataAvailable を使う。
 export function isJapaneseHoliday(date: string): boolean {
   return JAPANESE_HOLIDAYS.has(date)
 }
