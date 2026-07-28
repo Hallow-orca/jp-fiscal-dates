@@ -30,6 +30,7 @@ export const getPayrollRange = (
   targetMonth: number,
   closingDate: number = CLOSING_DATE_END_OF_MONTH,
 ): PayrollRange => {
+  assertValidYear(targetYear)
   assertValidMonth(targetMonth)
   assertValidClosingDate(closingDate)
 
@@ -42,6 +43,15 @@ export const getPayrollRange = (
   const start = new Date(targetYear, targetMonth - 2, closingDate + 1)
   const end = new Date(targetYear, targetMonth - 1, closingDate)
   return { start, end }
+}
+
+function assertValidYear(targetYear: number): void {
+  // 年に業務上の上限下限を置くのは難しいため、整数であることだけを要求する。
+  // NaN や小数を通すと new Date が Invalid Date を作り、例外を投げずに
+  // 壊れた値が下流へ流れてしまう。
+  if (!Number.isInteger(targetYear)) {
+    throw new RangeError(`targetYear は整数である必要があります。受け取った値: ${String(targetYear)}`)
+  }
 }
 
 function assertValidMonth(targetMonth: number): void {
