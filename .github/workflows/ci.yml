@@ -44,3 +44,33 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # 日付を文字列で扱う設計が実際にTZ非依存かを検証する。
+  # ローカルタイムゾーンを経由する実装が紛れ込むと、UTCとの差が大きい地域で落ちる。
+  timezones:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        timezone:
+          - UTC
+          - Asia/Tokyo # JST, UTC+9
+          - Pacific/Kiritimati # UTC+14（最も進んでいる）
+          - Pacific/Midway # UTC-11（最も遅れている）
+          - America/New_York # DST あり
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test (TZ=${{ matrix.timezone }})
+        run: npm test
+        env:
+          TZ: ${{ matrix.timezone }}
