@@ -60,3 +60,58 @@ describe('getPayrollRange / 日付締め', () => {
     expect(toLocalYmd(end)).toBe('2028-03-25')
   })
 })
+
+// Issue #2。JSDoc は closingDate を「1-28、99 は月末締め」と定めているが、
+// 実装は検証していない。範囲外の値は new Date の桁溢れがそのまま通り、
+// 例外も出さずに誤った期間を返す。給与・請求の集計期間は金額に直結するため、
+// 黙って進むより落ちるべき。
+describe('getPayrollRange / 入力検証', () => {
+  it('29-31日を締め日として拒否する', () => {
+    // 月によって存在しない日であり、締め日として成立しない。
+    expect(() => getPayrollRange(2026, 3, 29)).toThrow(RangeError)
+    expect(() => getPayrollRange(2026, 3, 30)).toThrow(RangeError)
+    expect(() => getPayrollRange(2026, 3, 31)).toThrow(RangeError)
+  })
+
+  it('0以下の締め日を拒否する', () => {
+    expect(() => getPayrollRange(2026, 3, 0)).toThrow(RangeError)
+    expect(() => getPayrollRange(2026, 3, -5)).toThrow(RangeError)
+  })
+
+  it('整数でない締め日を拒否する', () => {
+    expect(() => getPayrollRange(2026, 3, 1.5)).toThrow(RangeError)
+    expect(() => getPayrollRange(2026, 3, NaN)).toThrow(RangeError)
+  })
+
+  it('99以外の3桁以上の値を拒否する', () => {
+    expect(() => getPayrollRange(2026, 3, 100)).toThrow(RangeError)
+    expect(() => getPayrollRange(2026, 3, 98)).toThrow(RangeError)
+  })
+
+  it('範囲外の月を拒否する', () => {
+    expect(() => getPayrollRange(2026, 0, 20)).toThrow(RangeError)
+    expect(() => getPayrollRange(2026, 13, 20)).toThrow(RangeError)
+    expect(() => getPayrollRange(2026, 1.5, 20)).toThrow(RangeError)
+  })
+
+  it('整数でない年を拒否する', () => {
+    // Invalid Date は例外を投げないため、検証しないと壊れた値が下流に流れる。
+    expect(() => getPayrollRange(NaN, 3, 20)).toThrow(RangeError)
+    expect(() => getPayrollRange(1.5, 3, 20)).toThrow(RangeError)
+  })
+
+  it('有効な境界値は受け入れる', () => {
+    expect(() => getPayrollRange(2026, 1, 1)).not.toThrow()
+    expect(() => getPayrollRange(2026, 12, 28)).not.toThrow()
+    expect(() => getPayrollRange(2026, 6, 99)).not.toThrow()
+  })
+
+  it('エラーメッセージが原因と対処を示す', () => {
+    // メッセージの中身は「呼び出し側がスタックトレースだけで自力解決できる」ための
+    // 意図的な設計。型だけ検証していると、後のリファクタで静かに失われる。
+    expect(() => getPayrollRange(2026, 3, 31)).toThrow(/31/) // 受け取った値
+    expect(() => getPayrollRange(2026, 3, 31)).toThrow(/99/) // 月末締めの指定方法
+    expect(() => getPayrollRange(2026, 13, 20)).toThrow(/targetMonth/)
+    expect(() => getPayrollRange(NaN, 3, 20)).toThrow(/targetYear/)
+  })
+})
