@@ -8,4 +8,4 @@ export {
 } from './holidays.js'
 
 export type { PayrollRange } from './payroll.js'
-export { getPayrollRange } from './payroll.js'
+export { CLOSING_DATE_END_OF_MONTH, getPayrollRange } from './payroll.js'
